@@ -2,7 +2,7 @@
 import sys
 
 from robobo_interface import SimulationRobobo, HardwareRobobo
-from learning_machines import run_all_actions, race, evolve_population, explore
+from learning_machines import run_all_actions, race, evolve_population, explore, learn
 
 if __name__ == "__main__":
     # You can do better argument parsing than this!
@@ -22,3 +22,4 @@ if __name__ == "__main__":
     race(rob, steps=150)
     # evolve_population(rob, steps_per_race=60, pop_size=20, generations=100)
     # explore(rob, cells=50)
+    # learn(rob
