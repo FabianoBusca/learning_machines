@@ -331,7 +331,7 @@ def evolve_eater_population(
                 "fitness": res["fitness"],
                 "food_hits": res["food_hits"],
                 "avg_alignment": res["avg_alignment"],
-                "movement_sum": res["movement_sum"],
+                "movement_sum": res["movement"],
                 "visited_cells": res["visited_cells"],
                 "wall_collisions": res["wall_collisions"],
                 "penalty": res["wall_collisions"] * 60,

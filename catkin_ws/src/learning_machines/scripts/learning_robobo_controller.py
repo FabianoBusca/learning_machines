@@ -23,5 +23,5 @@ if __name__ == "__main__":
     # evolve_population(rob, steps_per_race=60, pop_size=20, generations=100)
     # explore(rob, cells=50)
     # learn(rob)
-    collect(rob)
-    # evolve_eater_population(rob)
+    # collect(rob)
+    evolve_eater_population(rob, generations=100)
