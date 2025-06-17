@@ -97,6 +97,16 @@ def run_all_actions(rob: IRobobo):
     touch = False
     turn_direction = "left"
 
+    # for i in range(5):
+    #     rob.move_blocking(100, 100, 1000)
+    #
+    # if isinstance(rob, SimulationRobobo):
+    #     try:
+    #         rob.stop_simulation()
+    #         print("Simulation stopped.")
+    #     except Exception as e:
+    #         print(f"Error stopping simulation: {e}")
+
     for i in range(15):
         try:
             irs = rob.read_irs()

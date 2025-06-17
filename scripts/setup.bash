@@ -9,7 +9,7 @@ export ROS_MASTER_URI="http://10.15.2.184:11311"
 #    hostname -I | awk '{print $1}'
 # macOS:
 #    ifconfig en0 | awk '/inet / {print $2}'
-export COPPELIA_SIM_IP="130.37.34.72"
+export COPPELIA_SIM_IP="130.37.221.43"
 # MacOS
 # zsh ./scripts/start_coppelia_sim.zsh ./scenes/Robobo_Scene.ttt 23000 -h
 # zsh ./scripts/run_apple_sillicon.zsh --simulation

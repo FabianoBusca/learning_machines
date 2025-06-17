@@ -217,7 +217,7 @@ class ExplorationLearner:
     def is_path_clear(self, state):
         """
         Check if there's a clear path forward with no walls based on the current state.
-        This is a convenience method that uses the sensor values directly 
+        This is a convenience method that uses the sensor values directly
         without calling the sensor handler again.
         """
         if state is None or len(state) < 8:
@@ -832,7 +832,7 @@ class ExplorationLearner:
             # Transfer learning from this episode to improve future episodes
             self.transfer_learning()
 
-            #  track & save the “best” 
+            #  track & save the “best”
             score = total_reward
             if score > self.best_score:
                 self.best_score = score
@@ -935,15 +935,15 @@ def learn(rob: IRobobo):
     """
     Main entry point that starts the reinforcement learning navigation system.
     This function uses pure exploration learning without manual data collection.
-    
+
     Args:
         rob: An instance of IRobobo (either SimulationRobobo or HardwareRobobo)
     """
     print("Starting Learning Machines Robobo RL Navigation System")
-    
+
     # Initialize the sensor handler with the provided robot
     sensor_handler = SensorInputHandler(rob)
-    
+
     # Check if we should run in simulation or hardware mode
     if isinstance(rob, SimulationRobobo):
         print("Running in simulation mode")
@@ -957,15 +957,15 @@ def learn(rob: IRobobo):
             return
     else:
         print("Running on hardware robot")
-    
+
     # Create the learning agent
     agent = ExplorationLearner(rob, sensor_handler)
-    
+
     # Train the agent with trial and error
     print("Beginning trial-and-error learning...")
     print("The robot will explore the environment and learn from its mistakes.")
     agent.train(episodes=50, max_steps=200)
-    
+
     # Clean up
     if isinstance(rob, SimulationRobobo):
         try:
