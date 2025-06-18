@@ -7,40 +7,40 @@ from robobo_interface import IRobobo, SimulationRobobo
 
 # Constants
 BEST_GENOTYPE = [
-    0.23653018129755293,
-    -0.8138190103081155,
-    -1.9500535520899063,
-    -0.7867988707670494,
-    2.7086654239295327,
-    -0.6002285043737772,
-    1.9609700620567112,
-    0.8843638063663466,
-    -0.44718801569613326,
-    0.9430777105174085,
-    -0.0019305129741222782,
-    0.40255496177381567,
-    2.292950138162538,
-    -2.0936141058220534,
-    -0.8327940701133354,
-    2.5200480017047457,
-    1.2815427263979966,
-    -0.1228929891751014,
-    -1.2053707407011813,
-    -1.4490698578513284,
-    0.8490552738667164,
-    -1.1829824075849593,
-    -1.1929336655523888,
-    1.7067237296274598,
-    -2.1685736369217437,
+    2.4627060210971528,
+    0.22245210064434282,
+    -0.23712053456020488,
+    2.086472636449688,
+    2.5172621168868288,
+    0.33188530265494937,
+    1.5333665331229962,
+    1.6000456134688303,
     3.0,
-    1.535032032267464,
-    1.8037686273323332,
-    -2.7477237584165937,
-    2.250282455274893,
-    -0.2595555078995631,
-    1.4341099566879474,
     3.0,
-    1.1202016078583708
+    2.025441975716278,
+    1.6583643668795025,
+    2.129778681342938,
+    0.8261431108179764,
+    -0.6678169693643315,
+    -2.8156985314751104,
+    -2.0773239814262627,
+    -2.481640944664592,
+    1.1671979709955584,
+    2.763355316408206,
+    1.0637006843175236,
+    0.6855034270068775,
+    -1.2923092047344351,
+    -2.214325031291805,
+    -2.6467229245494446,
+    0.7654473206965081,
+    0.18960214361839878,
+    0.9398480481869007,
+    0.9563114208292456,
+    0.35807696490921526,
+    0.2958701371101502,
+    -1.4490303058177312,
+    -2.8239952441812775,
+    -0.29789939102397067
   ]
 GRID_SIZE = 0.2
 LOG_PATH = "/root/results/logs/"
@@ -211,8 +211,8 @@ def collect(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, m
         rob.play_simulation()
         rob.sleep(2)
 
-    rob.set_phone_tilt_blocking(100, 100)
-    rob.set_phone_pan_blocking(110, 100)
+    rob.set_phone_tilt_blocking(90, 100)
+    rob.set_phone_pan_blocking(180, 100)
 
     for step in range(steps):
         try:
@@ -220,7 +220,7 @@ def collect(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, m
             image = rob.read_image_front()
             heatmap = image_to_green_grid(image)
 
-            # cv2.imwrite(os.path.join(LOG_PATH, f"image_{step}.png"), image)
+            cv2.imwrite(os.path.join(LOG_PATH, f"image_{step}.png"), image)
             # heatmap_array = np.array(heatmap).reshape((3, 3))
             # heatmap_image = (heatmap_array * 255).astype(np.uint8)
             # heatmap_image = cv2.resize(heatmap_image, (300, 300), interpolation=cv2.INTER_NEAREST)
@@ -256,11 +256,11 @@ def collect(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, m
             print(f"[{step}] Error: {e}")
             rob.sleep(1)
 
-    # if isinstance(rob, SimulationRobobo):
-    #     try:
-    #         rob.stop_simulation()
-    #     except Exception as e:
-    #         print(f"Error stopping simulation: {e}")
+    if isinstance(rob, SimulationRobobo):
+        try:
+            rob.stop_simulation()
+        except Exception as e:
+            print(f"Error stopping simulation: {e}")
 
     fitness, food_hits, avg_alignment, movement, visited, wall_collisions = calculate_fitness(log_data)
 
