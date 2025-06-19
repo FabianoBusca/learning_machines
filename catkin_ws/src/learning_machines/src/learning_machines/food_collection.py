@@ -7,41 +7,41 @@ from robobo_interface import IRobobo, SimulationRobobo
 
 # Constants
 BEST_GENOTYPE = [
-    2.4627060210971528,
-    0.22245210064434282,
-    -0.23712053456020488,
-    2.086472636449688,
-    2.5172621168868288,
-    0.33188530265494937,
-    1.5333665331229962,
-    1.6000456134688303,
-    3.0,
-    3.0,
-    2.025441975716278,
-    1.6583643668795025,
-    2.129778681342938,
-    0.8261431108179764,
-    -0.6678169693643315,
-    -2.8156985314751104,
-    -2.0773239814262627,
-    -2.481640944664592,
-    1.1671979709955584,
-    2.763355316408206,
-    1.0637006843175236,
-    0.6855034270068775,
-    -1.2923092047344351,
-    -2.214325031291805,
-    -2.6467229245494446,
-    0.7654473206965081,
-    0.18960214361839878,
-    0.9398480481869007,
-    0.9563114208292456,
-    0.35807696490921526,
-    0.2958701371101502,
-    -1.4490303058177312,
-    -2.8239952441812775,
-    -0.29789939102397067
-  ]
+        2.4533803135661003,
+        1.5316262961467675,
+        -2.515801504965874,
+        0.3685128007813947,
+        0.2888620054821118,
+        1.3794013926015936,
+        -2.109923017435552,
+        0.34529485143776606,
+        0.6851137538184568,
+        1.1026623609443682,
+        2.431037238627479,
+        -0.20941272200714203,
+        -1.613992528123193,
+        -1.4232126619510512,
+        0.4593188203809264,
+        1.2412273441391497,
+        -1.0522353948944123,
+        0.7279887620962164,
+        -0.15679093214528206,
+        2.6583977396685867,
+        -2.090406471717199,
+        0.9758462523720223,
+        0.5277621682059508,
+        0.9225694547612775,
+        2.381891562166912,
+        1.9157738325550095,
+        1.4799135364690366,
+        -0.3299699005807071,
+        2.5053943661645643,
+        0.1547686267926331,
+        -1.2168849303550693,
+        -1.9530616124675726,
+        0.6832153701619015,
+        -0.2944415291170802
+      ]
 GRID_SIZE = 0.2
 LOG_PATH = "/root/results/logs/"
 
@@ -139,7 +139,7 @@ def calculate_fitness(log_data, idx=None):
         if not heatmap or len(irs) < 8:
             continue
 
-        collision_threshold = 270
+        collision_threshold = 1000
 
         # Group IR readings
         front_ir = max(irs[i] for i in [2, 3, 4, 5, 7])
@@ -202,7 +202,7 @@ def tournament_selection(population, scores, size=3, win_prob=0.8):
     return selected
 
 
-def collect(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, multiple_runs=False):
+def collect(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, multiple_runs=False, hardware=False):
     if genotype is None:
         genotype = BEST_GENOTYPE
     log_data = []
@@ -212,7 +212,10 @@ def collect(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, m
         rob.sleep(2)
 
     rob.set_phone_tilt_blocking(90, 100)
-    rob.set_phone_pan_blocking(180, 100)
+    if hardware:
+        rob.set_phone_pan_blocking(150, 100)
+    else:
+        rob.set_phone_pan_blocking(180, 100)
 
     for step in range(steps):
         try:
@@ -220,7 +223,7 @@ def collect(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, m
             image = rob.read_image_front()
             heatmap = image_to_green_grid(image)
 
-            cv2.imwrite(os.path.join(LOG_PATH, f"image_{step}.png"), image)
+            # cv2.imwrite(os.path.join(LOG_PATH, f"image_{step}.png"), image)
             # heatmap_array = np.array(heatmap).reshape((3, 3))
             # heatmap_image = (heatmap_array * 255).astype(np.uint8)
             # heatmap_image = cv2.resize(heatmap_image, (300, 300), interpolation=cv2.INTER_NEAREST)
@@ -320,7 +323,7 @@ def evolve_eater_population(
         fitnesses, disps, penalties, gen_data = [], [], [], []
 
         for i, geno in enumerate(population):
-            res = collect(rob, geno, steps=steps_per_episode, log_run=False)
+            res = collect(rob, geno, steps=steps_per_episode, log_run=False, hardware=False)
             fitnesses.append(res["fitness"])
             disps.append(res["displacement"])
             penalties.append(res["wall_collisions"] * 60)
