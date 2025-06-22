@@ -2,7 +2,7 @@
 import sys
 
 from robobo_interface import SimulationRobobo, HardwareRobobo
-from learning_machines import run_all_actions, race, evolve_population, explore, collect, evolve_eater_population#, learn
+from learning_machines import run_all_actions, race, evolve_population, explore, collect, evolve_eater_population, move, evolve_mover_population#, learn
 
 if __name__ == "__main__":
     # You can do better argument parsing than this!
@@ -23,5 +23,7 @@ if __name__ == "__main__":
     # evolve_population(rob, steps_per_race=60, pop_size=20, generations=100)
     # explore(rob, cells=50)
     # learn(rob)
-    collect(rob, hardware=True)
+    # collect(rob, steps=6000, hardware=True)
     # evolve_eater_population(rob, generations=100)
+    # move(rob)
+    evolve_mover_population(rob)

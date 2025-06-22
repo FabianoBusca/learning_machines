@@ -211,24 +211,26 @@ def collect(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, m
         rob.play_simulation()
         rob.sleep(2)
 
-    rob.set_phone_tilt_blocking(90, 100)
-    if hardware:
-        rob.set_phone_pan_blocking(150, 100)
-    else:
+    if not hardware:
+        rob.set_phone_tilt_blocking(90, 100)
         rob.set_phone_pan_blocking(180, 100)
 
     for step in range(steps):
         try:
             irs = rob.read_irs()
+            # if hardware:
+            #     for i in range(len(irs)):
+            #         irs[i] = irs[i] * 100
             image = rob.read_image_front()
             heatmap = image_to_green_grid(image)
 
             # cv2.imwrite(os.path.join(LOG_PATH, f"image_{step}.png"), image)
             # heatmap_array = np.array(heatmap).reshape((3, 3))
-            # heatmap_image = (heatmap_array * 255).astype(np.uint8)
+            # heatmap_image = (heatmap_array * 10000).astype(np.uint8)
             # heatmap_image = cv2.resize(heatmap_image, (300, 300), interpolation=cv2.INTER_NEAREST)
             # heatmap_image = cv2.applyColorMap(heatmap_image, cv2.COLORMAP_JET)
             # cv2.imwrite(os.path.join(LOG_PATH, f"heatmap_{step}.png"), heatmap_image)
+            # exit(1)
 
             if irs is None or len(irs) < 8:
                 rob.sleep(0.2)
@@ -253,7 +255,10 @@ def collect(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, m
             if log_run:
                 print(f"[{step}] Position: {position}, Moving: L={left_speed}, R={right_speed}")
 
-            rob.move_blocking(left_speed, right_speed, delay_ms)
+            if hardware:
+                rob.move(left_speed, right_speed, delay_ms)
+            else:
+                rob.move_blocking(left_speed, right_speed, delay_ms)
 
         except Exception as e:
             print(f"[{step}] Error: {e}")
