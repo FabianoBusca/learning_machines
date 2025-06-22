@@ -338,8 +338,8 @@ def move(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, mult
 
 def evolve_mover_population(
     rob: IRobobo,
-    generations=2,
-    pop_size=3,
+    generations=50,
+    pop_size=20,
     elite_size=2,
     steps_per_episode=30,
     resume_from=None
