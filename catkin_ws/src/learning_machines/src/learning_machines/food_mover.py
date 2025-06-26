@@ -3,64 +3,68 @@ import numpy as np
 import os
 import json
 from datetime import datetime
+from scipy.spatial.distance import cityblock
 from robobo_interface import IRobobo, SimulationRobobo
 
 # Constants
 BEST_GENOTYPE = [
-        2.4533803135661003,
-        1.5316262961467675,
-        -2.515801504965874,
-        0.3685128007813947,
-        0.2888620054821118,
-        1.3794013926015936,
-        -2.109923017435552,
-        0.34529485143776606,
-        0.6851137538184568,
-        1.1026623609443682,
-        2.431037238627479,
-        -0.20941272200714203,
-        -1.613992528123193,
-        -1.4232126619510512,
-        0.4593188203809264,
-        1.2412273441391497,
-        -1.0522353948944123,
-        0.7279887620962164,
-        -0.15679093214528206,
-        2.6583977396685867,
-        -2.090406471717199,
-        0.9758462523720223,
-        0.5277621682059508,
-        0.9225694547612775,
-        2.381891562166912,
-        1.9157738325550095,
-        1.4799135364690366,
-        -0.3299699005807071,
-        2.5053943661645643,
-        0.1547686267926331,
-        -1.2168849303550693,
-        -1.9530616124675726,
-        0.6832153701619015,
-        -0.2944415291170802,
-        1.9157738325550095,
-        1.4799135364690366,
-        -0.3299699005807071,
-        2.5053943661645643,
-        0.1547686267926331,
-        -1.2168849303550693,
-        -1.9530616124675726,
-        0.6832153701619015,
-        -0.2944415291170802,
-        1.9157738325550095,
-        1.4799135364690366,
-        -0.3299699005807071,
-        2.5053943661645643,
-        0.1547686267926331,
-        -1.2168849303550693,
-        -1.9530616124675726,
-        0.6832153701619015,
-        -0.2944415291170802
-      ]
-GRID_SIZE = 0.2
+    -0.09883144613223127,
+    -1.8188285054585398,
+    0.2411692060771382,
+    1.2105324695340824,
+    -0.5334950248291732,
+    -1.1543602515265872,
+    -0.8491703832341675,
+    1.9901119634022684,
+    1.242707480282795,
+    1.2765451704345434,
+    -0.1834873336721876,
+    -0.540351773355709,
+    -1.5298222905115,
+    0.7798167411334345,
+    -0.7141448737959992,
+    1.9883723110232747,
+    0.8085503243585075,
+    -0.6383299701956555,
+    -0.007672020391091827,
+    0.6104007356737537,
+    0.8079277501350468,
+    0.7811324937528896,
+    -1.1393144177914785,
+    -1.3858679994181955,
+    -0.12354011815161137,
+    -1.4062886639877417,
+    1.3190747691921123,
+    1.5462805942520181,
+    -1.708791047743468,
+    -0.5612607864064043,
+    1.2188701478138677,
+    0.5053274093960058,
+    1.825241258339732,
+    0.2694179923732922,
+    -0.20490199514097274,
+    0.8668772422198501,
+    0.846079577777878,
+    0.8837460118887828,
+    0.104471731292886,
+    0.5036757587094338,
+    1.3668813057823108,
+    0.6706443761435459,
+    -0.20525521127333413,
+    0.08718920223650484,
+    0.40277596612738487,
+    1.6878586766586419,
+    0.6367288695476199,
+    1.876954601632387,
+    -0.1465908080621836,
+    -1.087242701476017,
+    0.7591873149229529,
+    0.08019083033181662,
+    -1.1543391363856412,
+    -0.16368884970584086,
+    -0.5255010704929339,
+    -1.3191702599315565
+  ]
 LOG_PATH = "/root/results/logs/"
 
 
@@ -76,18 +80,22 @@ def make_log_dir(subdir, multiple_runs=False):
 
 def save_log(log_dir, log_data, genotype):
     log_file = os.path.join(log_dir, "log.json")
-    fitness, food_delivered, red_in_cell7_count, green_in_cell4_count, movement_sum, walls = calculate_fitness(log_data)
+    fitness_result = calculate_fitness(log_data)
+    rewards = fitness_result["rewards"]
+
     data = {
         "genotype": genotype.tolist() if isinstance(genotype, np.ndarray) else genotype,
-        "fitness": fitness,
-        "success": food_delivered,
-        "red_alignment": red_in_cell7_count,
-        "green_alignment": green_in_cell4_count,
-        "movement": movement_sum,
-        "movement_reward": movement_sum * 0.01,
-        "wall_collisions": walls,
+        "fitness": fitness_result["fitness"],
+        "success": fitness_result["success"],
+        "red_alignment": fitness_result["red_alignment"],
+        "green_alignment": fitness_result["green_alignment"],
+        "movement": fitness_result["movement_sum"],
+        "wall_collisions": fitness_result["wall_collisions"],
+        "alignment_penalty_raw": fitness_result["alignment_penalty_raw"],
+        **rewards,  # injects keys like red_alignment_reward, movement_reward, etc.
         "steps": log_data
     }
+
     try:
         with open(log_file, "w") as f:
             json.dump(data, f, indent=2)
@@ -95,14 +103,6 @@ def save_log(log_dir, log_data, genotype):
     except Exception as e:
         print(f"Error saving log: {e}")
     return data
-
-
-def get_cell(position):
-    if position is None:
-        return None
-    x, y = position
-    return int(x // GRID_SIZE), int(y // GRID_SIZE)
-
 
 def image_to_green_grid(image, grid_rows=3, grid_cols=3):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -150,17 +150,49 @@ def policy(irs, red, green, genotype):
     ir_inputs = 1.0 - np.array(irs, dtype=np.float32) / 400.0
     ir_inputs = np.clip(ir_inputs, 0.0, 1.0)
 
-    inputs = np.concatenate([ir_inputs, red, green])  # shape: (26,)
-    weights = np.array(genotype, dtype=np.float32).reshape((26, 2))
+    red = np.array(red, dtype=np.float32)
+    green = np.array(green, dtype=np.float32)
+
+    # Derived features
+    alignment_score = np.array([red[7] * green[4]], dtype=np.float32)
+    red_in_zone_feature = np.array([1.0 if red[4] > 0.5 and green[4] > 0.5 else 0.0], dtype=np.float32)
+
+    # Final input vector: 8 + 9 + 9 + 1 + 1 = 28
+    inputs = np.concatenate([ir_inputs, red, green, alignment_score, red_in_zone_feature])
+
+    weights = np.array(genotype, dtype=np.float32).reshape((28, 2))
 
     action = np.dot(inputs, weights)
     left, right = np.clip(action * 100, -100, 100)
     return int(left), int(right)
 
+def estimate_alignment_distance(red_heatmap, green_heatmap):
+    red_idx = np.argmax(red_heatmap)
+    green_idx = np.argmax(green_heatmap)
+    red_coord = (red_idx // 3, red_idx % 3)
+    green_coord = (green_idx // 3, green_idx % 3)
+    return cityblock(red_coord, green_coord)
 
 def calculate_fitness(log_data, idx=None):
     if not log_data:
-        return 0.0, 0, 0, 0.0, 0
+        return {
+            "fitness": 0.0,
+            "rewards": {
+                "red_alignment_reward": 0,
+                "green_alignment_reward": 0,
+                "both_alignment_reward": 0,
+                "movement_reward": 0.0,
+                "delivery_reward": 0,
+                "wall_penalty": 0,
+                "alignment_penalty": 0.0
+            },
+            "success": 0,
+            "red_alignment": 0,
+            "green_alignment": 0,
+            "movement_sum": 0.0,
+            "wall_collisions": 0,
+            "alignment_penalty_raw": 0.0
+        }
 
     wall_collisions = 0
     red_in_cell7_count = 0
@@ -168,6 +200,7 @@ def calculate_fitness(log_data, idx=None):
     both_in_alignment = 0
     movement_sum = 0.0
     food_delivered = 0
+    alignment_penalty_total = 0.0
 
     for step in log_data:
         irs = step.get("irs", [])
@@ -178,16 +211,16 @@ def calculate_fitness(log_data, idx=None):
         if len(red_heatmap) != 9 or len(green_heatmap) != 9 or len(irs) < 8:
             continue
 
-        movement = (step["left_speed"] + step["right_speed"]) / 2.0
+        movement = (step["left_speed"] + step["right_speed"])
         if movement < 0:
             movement = -movement / 2.0
         movement_sum += movement
 
-        if red_heatmap[7] > 0.2:  # threshold to avoid noise
+        if red_heatmap[7] > 0.0:
             red_in_cell7_count += 1
-        if green_heatmap[4] > 0.2:
+        if green_heatmap[4] > 0.0:
             green_in_cell4_count += 1
-        if red_heatmap[7] > 0.2 and green_heatmap[4] > 0.2:
+        if red_heatmap[7] > 0.0 and green_heatmap[4] > 0.0:
             both_in_alignment += 1
 
         if red_in_green_zone:
@@ -196,23 +229,45 @@ def calculate_fitness(log_data, idx=None):
         if max(irs) > 200:
             wall_collisions += 1
 
+        alignment_penalty_total += estimate_alignment_distance(red_heatmap, green_heatmap)
+
+    rewards = {
+        "red_alignment_reward": red_in_cell7_count * 10,
+        "green_alignment_reward": green_in_cell4_count * 10,
+        "both_alignment_reward": both_in_alignment * 40,
+        "movement_reward": movement_sum * 0.02,
+        "delivery_reward": food_delivered * 2000,
+        "wall_penalty": wall_collisions * 30,
+        "alignment_penalty": alignment_penalty_total * 5
+    }
+
     fitness = (
-        red_in_cell7_count * 10 +
-        green_in_cell4_count * 10 +
-        both_in_alignment * 30 +
-        movement_sum * 0.01 +
-        food_delivered * 1000 -
-        wall_collisions * 60
+        rewards["red_alignment_reward"] +
+        rewards["green_alignment_reward"] +
+        rewards["both_alignment_reward"] +
+        rewards["movement_reward"] +
+        rewards["delivery_reward"] -
+        rewards["wall_penalty"] -
+        rewards["alignment_penalty"]
     )
 
     if idx is not None:
         print(
-            f"[{idx}] fitness: {fitness:.2f}, red_7: {red_in_cell7_count}, green_4: {green_in_cell4_count}, align: {both_in_alignment}, delivered: {food_delivered}, move: {movement_sum:.1f}, wall: {wall_collisions}"
+            f"[{idx}] fitness: {fitness:.2f} | red_7: {red_in_cell7_count}, green_4: {green_in_cell4_count}, align: {both_in_alignment}, "
+            f"delivered: {food_delivered}, move: {movement_sum:.1f}, wall: {wall_collisions}, dist_penalty: {alignment_penalty_total:.2f}"
         )
 
-    return fitness, food_delivered, red_in_cell7_count, green_in_cell4_count, movement_sum, wall_collisions
-
-def create_initial_population(pop_size=20, genome_size=52):
+    return {
+        "fitness": fitness,
+        "rewards": rewards,
+        "success": food_delivered,
+        "red_alignment": red_in_cell7_count,
+        "green_alignment": green_in_cell4_count,
+        "movement_sum": movement_sum,
+        "wall_collisions": wall_collisions,
+        "alignment_penalty_raw": alignment_penalty_total
+    }
+def create_initial_population(pop_size=20, genome_size=56):
     return [np.random.uniform(-2.0, 2.0, genome_size) for _ in range(pop_size)]
 
 
@@ -255,27 +310,14 @@ def move(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, mult
     for step in range(steps):
         try:
             irs = rob.read_irs()
-            # if hardware:
-            #     for i in range(len(irs)):
-            #         irs[i] = irs[i] * 100
             image = rob.read_image_front()
             red_heatmap = image_to_red_grid(image)
             green_heatmap = image_to_green_grid(image)
 
-            # cv2.imwrite(os.path.join(LOG_PATH, f"image_{step}.png"), image)
-            # def save_heatmap(heatmap, color):
-            #     heatmap_array = np.array(heatmap).reshape((3, 3))
-            #     heatmap_image = (heatmap_array * 10000).astype(np.uint8)
-            #     heatmap_image = cv2.resize(heatmap_image, (300, 300), interpolation=cv2.INTER_NEAREST)
-            #     heatmap_image = cv2.applyColorMap(heatmap_image, cv2.COLORMAP_JET)
-            #     cv2.imwrite(os.path.join(LOG_PATH, f"{color}_heatmap_{step}.png"), heatmap_image)
-            # save_heatmap(red_heatmap, color)
-            # save_heatmap(green_heatmap, color)
-            # exit(1)
-
             if irs is None or len(irs) < 8:
                 rob.sleep(0.2)
                 continue
+
             left_speed, right_speed = policy(irs, red_heatmap, green_heatmap, genotype)
             timestamp = datetime.now().isoformat()
             try:
@@ -315,18 +357,19 @@ def move(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, mult
         except Exception as e:
             print(f"Error stopping simulation: {e}")
 
-    fitness, food_delivered, red_in_cell7_count, green_in_cell4_count, movement_sum, walls = calculate_fitness(log_data)
+    fitness_result = calculate_fitness(log_data)
+    rewards = fitness_result["rewards"]
 
     result = {
         "genotype": genotype,
-        "fitness": fitness,
-        "success": food_delivered,
-        "red_alignment": red_in_cell7_count,
-        "green_alignment": green_in_cell4_count,
-        "movement": movement_sum,
-        "movement_reward": movement_sum * 0.01,
-        "wall_collisions": walls,
-        "wall_penalty": walls * 60,
+        "fitness": fitness_result["fitness"],
+        "success": fitness_result["success"],
+        "red_alignment": fitness_result["red_alignment"],
+        "green_alignment": fitness_result["green_alignment"],
+        "movement": fitness_result["movement_sum"],
+        "wall_collisions": fitness_result["wall_collisions"],
+        "alignment_penalty_raw": fitness_result["alignment_penalty_raw"],
+        **rewards,
         "steps": log_data
     }
 
@@ -376,7 +419,7 @@ def evolve_mover_population(
             res = move(rob, geno, steps=steps_per_episode, log_run=False, hardware=False)
             fitnesses.append(res["fitness"])
 
-            gen_data.append({
+            individual_data = {
                 "individual": i + 1,
                 "genotype": geno.tolist(),
                 "fitness": res["fitness"],
@@ -385,14 +428,27 @@ def evolve_mover_population(
                 "red_alignment": res["red_alignment"],
                 "movement_sum": res["movement"],
                 "wall_collisions": res["wall_collisions"],
-                "penalty": res["wall_collisions"] * 60,
-            })
+                "alignment_penalty_raw": res["alignment_penalty_raw"],
+                "red_alignment_reward": res["red_alignment_reward"],
+                "green_alignment_reward": res["green_alignment_reward"],
+                "both_alignment_reward": res["both_alignment_reward"],
+                "movement_reward": res["movement_reward"],
+                "delivery_reward": res["delivery_reward"],
+                "wall_penalty": res["wall_penalty"],
+                "alignment_penalty": res["alignment_penalty"]
+            }
+
+            gen_data.append(individual_data)
 
         best_fit = max(fitnesses)
         avg_fit = np.mean(fitnesses)
         best_idx = np.argmax(fitnesses)
         print(
             f"Gen {g + 1}: Best={best_fit:.2f}, Avg={avg_fit:.2f}, "
+            f"Move={gen_data[best_idx]['movement_reward']:.2f}, "
+            f"Delivery={gen_data[best_idx]['delivery_reward']}, "
+            f"Align={gen_data[best_idx]['both_alignment_reward']}, "
+            f"Penalty={gen_data[best_idx]['alignment_penalty']:.2f}"
         )
 
         evolution_log["best_fitness_per_gen"].append(best_fit)
@@ -417,7 +473,6 @@ def evolve_mover_population(
                 offspring.extend([mutate(c1), mutate(c2)])
             population = elites + offspring[:pop_size - elite_size]
 
-    # Save full population to allow resuming
     evolution_log["final_population"] = [geno.tolist() for geno in population]
 
     with open(os.path.join(log_dir, "evolution_log.json"), "w") as f:
