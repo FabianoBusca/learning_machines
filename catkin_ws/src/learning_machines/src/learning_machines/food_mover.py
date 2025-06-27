@@ -8,63 +8,63 @@ from robobo_interface import IRobobo, SimulationRobobo
 
 # Constants
 BEST_GENOTYPE = [
-    -0.09883144613223127,
-    -1.8188285054585398,
-    0.2411692060771382,
-    1.2105324695340824,
-    -0.5334950248291732,
-    -1.1543602515265872,
-    -0.8491703832341675,
-    1.9901119634022684,
-    1.242707480282795,
-    1.2765451704345434,
-    -0.1834873336721876,
-    -0.540351773355709,
-    -1.5298222905115,
-    0.7798167411334345,
-    -0.7141448737959992,
-    1.9883723110232747,
-    0.8085503243585075,
-    -0.6383299701956555,
-    -0.007672020391091827,
-    0.6104007356737537,
-    0.8079277501350468,
-    0.7811324937528896,
-    -1.1393144177914785,
-    -1.3858679994181955,
-    -0.12354011815161137,
-    -1.4062886639877417,
-    1.3190747691921123,
-    1.5462805942520181,
-    -1.708791047743468,
-    -0.5612607864064043,
-    1.2188701478138677,
-    0.5053274093960058,
-    1.825241258339732,
-    0.2694179923732922,
-    -0.20490199514097274,
-    0.8668772422198501,
-    0.846079577777878,
-    0.8837460118887828,
-    0.104471731292886,
-    0.5036757587094338,
-    1.3668813057823108,
-    0.6706443761435459,
-    -0.20525521127333413,
-    0.08718920223650484,
-    0.40277596612738487,
-    1.6878586766586419,
-    0.6367288695476199,
-    1.876954601632387,
-    -0.1465908080621836,
-    -1.087242701476017,
-    0.7591873149229529,
-    0.08019083033181662,
-    -1.1543391363856412,
-    -0.16368884970584086,
-    -0.5255010704929339,
-    -1.3191702599315565
-  ]
+        -1.6405612486606769,
+        1.5701654322720868,
+        1.4604228668348376,
+        -0.2680535133450599,
+        0.21281612107711956,
+        -0.43058988245946006,
+        -0.9250173490616871,
+        0.9839772284090582,
+        -1.5843708052419592,
+        1.304208137583725,
+        1.3582834553382415,
+        -1.9844970062426834,
+        0.2650718472428544,
+        -0.8343586294485497,
+        1.9100132664852896,
+        1.4143586183146946,
+        -1.2285708434818714,
+        -1.7826731263018991,
+        -0.46620362737300214,
+        0.41319389780044435,
+        -1.3536617917449627,
+        -1.256617290887526,
+        1.6551547240717164,
+        1.9167138600176075,
+        1.1971628042437348,
+        1.0114390506365614,
+        -0.5009051778100608,
+        1.525160249280881,
+        0.21942674887133196,
+        -1.319343465200204,
+        -1.1200956426081863,
+        -0.41703302817242927,
+        -0.16439190535838932,
+        -0.26946301855048205,
+        -0.8346664306283134,
+        -1.526739693684843,
+        0.8945087768091238,
+        -1.4388303546283026,
+        1.748181566975994,
+        0.4821975703698307,
+        0.6549114903934821,
+        -0.1718902412721537,
+        0.24297081642030172,
+        0.34739238630194036,
+        1.9878006514434707,
+        -1.577620240423677,
+        -1.6755311493425218,
+        0.06891479662667965,
+        1.451260943404312,
+        -1.6514873562632646,
+        0.9057407283927699,
+        -1.4172876148500824,
+        -0.04823431994465155,
+        1.2103952786566965,
+        1.6677704623512328,
+        1.2817841241919616
+      ]
 LOG_PATH = "/root/results/logs/"
 
 
@@ -124,9 +124,9 @@ def image_to_green_grid(image, grid_rows=3, grid_cols=3):
 def image_to_red_grid(image, grid_rows=3, grid_cols=3):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     # Red spans two ranges in HSV
-    lower_red1 = (0, 100, 100)
+    lower_red1 = (0, 100, 50)
     upper_red1 = (10, 255, 255)
-    lower_red2 = (160, 100, 100)
+    lower_red2 = (160, 100, 50)
     upper_red2 = (180, 255, 255)
     mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
     mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
@@ -155,7 +155,7 @@ def policy(irs, red, green, genotype):
 
     # Derived features
     alignment_score = np.array([red[7] * green[4]], dtype=np.float32)
-    red_in_zone_feature = np.array([1.0 if red[4] > 0.5 and green[4] > 0.5 else 0.0], dtype=np.float32)
+    red_in_zone_feature = np.array([1.0 if red[7] > 0.1 and green[7] > 0.1 else 0.0], dtype=np.float32)
 
     # Final input vector: 8 + 9 + 9 + 1 + 1 = 28
     inputs = np.concatenate([ir_inputs, red, green, alignment_score, red_in_zone_feature])
@@ -311,8 +311,28 @@ def move(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, mult
         try:
             irs = rob.read_irs()
             image = rob.read_image_front()
+
+            cv2.imwrite(os.path.join(LOG_PATH, f"image_{step}.png"), image)
             red_heatmap = image_to_red_grid(image)
             green_heatmap = image_to_green_grid(image)
+            print(red_heatmap)
+            print("---")
+            print(green_heatmap)
+            red_heatmap_img = (np.array(red_heatmap).reshape((3, 3)) * 255).astype(np.uint8)
+            green_heatmap_img = (np.array(green_heatmap).reshape((3, 3)) * 255).astype(np.uint8)
+
+            red_heatmap_img = cv2.resize(red_heatmap_img, (300, 300), interpolation=cv2.INTER_NEAREST)
+            green_heatmap_img = cv2.resize(green_heatmap_img, (300, 300), interpolation=cv2.INTER_NEAREST)
+            red_colored = cv2.applyColorMap(red_heatmap_img * 100, cv2.COLORMAP_HOT)
+            green_colored = cv2.applyColorMap(green_heatmap_img * 200, cv2.COLORMAP_DEEPGREEN)
+            cv2.imwrite(os.path.join(LOG_PATH, f"red_heatmap_{step}.png"), red_colored)
+            cv2.imwrite(os.path.join(LOG_PATH, f"green_heatmap_{step}.png"), green_colored)
+            if isinstance(rob, SimulationRobobo):
+                try:
+                    rob.stop_simulation()
+                except Exception as e:
+                    print(f"Error stopping simulation: {e}")
+            exit(1)
 
             if irs is None or len(irs) < 8:
                 rob.sleep(0.2)
@@ -326,7 +346,7 @@ def move(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, mult
             except:
                 position = None
 
-            red_in_green_zone = rob.base_detects_food()
+            # red_in_green_zone = rob.base_detects_food()
 
             log_data.append({
                 "timestamp": timestamp,
@@ -336,7 +356,7 @@ def move(rob: IRobobo, genotype=None, steps=30, delay_ms=500, log_run=True, mult
                 "green_heatmap": green_heatmap,
                 "left_speed": left_speed,
                 "right_speed": right_speed,
-                "red_in_green_zone": red_in_green_zone,
+                "red_in_green_zone": False,
             })
 
             if log_run:

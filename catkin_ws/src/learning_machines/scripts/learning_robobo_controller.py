@@ -25,5 +25,5 @@ if __name__ == "__main__":
     # learn(rob)
     # collect(rob, steps=6000, hardware=True)
     # evolve_eater_population(rob, generations=100)
-    # move(rob)
-    evolve_mover_population(rob)
+    move(rob, hardware=False, steps=300)
+    # evolve_mover_population(rob, generations=20)
